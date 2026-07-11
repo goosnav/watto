@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Watto — know what it's worth</title>
+<style>
+  :root { --ink:#1c1917; --muted:#78716c; --line:#e7e5e4; --gold:#b45309; --gold-soft:#fef3c7; --bg:#fafaf9; --card:#ffffff; --red:#b91c1c; --green:#15803d; }
+  * { box-sizing:border-box; margin:0; }
+  body { font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); min-height:100vh; }
+  .wrap { max-width:680px; margin:0 auto; padding:24px 16px 80px; }
+  header { display:flex; justify-content:flex-end; padding:14px 18px; }
+  .gear { background:none; border:none; font-size:22px; cursor:pointer; color:var(--muted); }
+  .gear:hover { color:var(--ink); }
+  .logo { text-align:center; margin:6vh 0 8px; font-size:56px; font-weight:800; letter-spacing:-2px; }
+  .logo em { color:var(--gold); font-style:normal; }
+  .tagline { text-align:center; color:var(--muted); margin-bottom:32px; }
+  .compact .logo { margin-top:8px; font-size:32px; }
+  .compact .tagline { display:none; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.05); margin-bottom:16px; }
+  .drop { border:2px dashed var(--line); border-radius:12px; padding:22px; text-align:center; color:var(--muted); cursor:pointer; transition:.15s; }
+  .drop:hover, .drop.over { border-color:var(--gold); background:var(--gold-soft); color:var(--gold); }
+  .thumbs { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .thumb { position:relative; }
+  .thumb img, .thumb .pdf { width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+  .thumb .pdf { display:flex; align-items:center; justify-content:center; font-size:11px; background:#f5f5f4; color:var(--muted); text-align:center; padding:4px; overflow:hidden; }
+  .thumb button { position:absolute; top:-7px; right:-7px; width:20px; height:20px; border-radius:50%; border:none; background:var(--ink); color:#fff; font-size:11px; line-height:1; cursor:pointer; }
+  textarea { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font:inherit; resize:vertical; min-height:76px; margin-top:12px; }
+  textarea:focus, input:focus { outline:2px solid var(--gold); border-color:transparent; }
+  .btn { display:block; width:100%; margin-top:14px; padding:14px; font:inherit; font-weight:700; color:#fff; background:var(--ink); border:none; border-radius:12px; cursor:pointer; }
+  .btn:hover { background:#000; }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .btn.gold { background:var(--gold); }
+  .banner { background:var(--gold-soft); border:1px solid #fcd34d; border-radius:12px; padding:12px 14px; font-size:14px; margin-bottom:16px; }
+  .banner a { color:var(--gold); font-weight:600; cursor:pointer; }
+  .status { display:flex; align-items:center; gap:12px; color:var(--muted); }
+  .spin { width:20px; height:20px; border:3px solid var(--line); border-top-color:var(--gold); border-radius:50%; animation:sp 1s linear infinite; flex:none; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  .q label { display:block; font-weight:600; margin:14px 0 2px; }
+  .q .hint { font-size:13px; color:var(--muted); margin-bottom:6px; }
+  .q input[type=text] { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font:inherit; }
+  .skipnote { font-size:13px; color:var(--muted); margin-top:10px; }
+  .ident { font-size:14px; color:var(--muted); }
+  .range { font-size:40px; font-weight:800; letter-spacing:-1px; margin:6px 0 0; }
+  .likely { color:var(--muted); margin-bottom:10px; }
+  .likely b { color:var(--ink); }
+  .pill { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.5px; }
+  .pill.high { background:#dcfce7; color:var(--green); }
+  .pill.medium { background:var(--gold-soft); color:var(--gold); }
+  .pill.low { background:#fee2e2; color:var(--red); }
+  .sect { margin-top:16px; }
+  .sect h3 { font-size:13px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:6px; }
+  .sect ul { padding-left:20px; }
+  .sect li { margin:3px 0; }
+  .flag li { color:var(--red); }
+  details { margin-top:14px; }
+  summary { cursor:pointer; color:var(--muted); font-size:14px; }
+  details p { margin-top:8px; font-size:14px; white-space:pre-wrap; }
+  .comps a { color:var(--gold); }
+  .err { background:#fee2e2; border:1px solid #fca5a5; color:var(--red); border-radius:12px; padding:12px 14px; margin-bottom:16px; font-size:14px; }
+  dialog { margin:auto; border:none; border-radius:16px; padding:24px; width:min(440px,92vw); box-shadow:0 20px 60px rgba(0,0,0,.25); }
+  dialog::backdrop { background:rgba(0,0,0,.35); }
+  dialog h2 { margin-bottom:4px; }
+  dialog .sub { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  dialog label { display:block; font-size:13px; font-weight:600; margin:12px 0 3px; }
+  dialog input[type=text], dialog input[type=password] { width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font:inherit; font-size:14px; }
+  dialog .row { display:flex; gap:8px; align-items:center; margin-top:14px; font-size:14px; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<header><button class="gear" id="gearBtn" title="Settings">&#9881;</button></header>
+<div class="wrap" id="wrap">
+  <div class="logo">Watto<em>.</em></div>
+  <div class="tagline">Snap it. Describe it. Know what it's worth.</div>
+
+  <div class="banner hidden" id="keyBanner">
+    Watto needs an OpenRouter API key to work.
+    <a id="bannerOpen">Add it in Settings</a> — one key unlocks every model.
+  </div>
+  <div class="err hidden" id="errBox"></div>
+
+  <!-- intake -->
+  <div class="card" id="intakeCard">
+    <div class="drop" id="drop">Add photos or a PDF — tap here or drag files in</div>
+    <input type="file" id="fileInput" class="hidden" multiple accept="image/*,application/pdf">
+    <div class="thumbs" id="thumbs"></div>
+    <textarea id="desc" placeholder="Describe the item… e.g. “gold ring with a red stone, stamped 583, bought in Russia”"></textarea>
+    <button class="btn gold" id="goBtn">Appraise it</button>
+  </div>
+
+  <!-- working -->
+  <div class="card hidden" id="statusCard">
+    <div class="status"><div class="spin"></div><div id="statusText">Looking at your item…</div></div>
+  </div>
+
+  <!-- questions -->
+  <div class="card hidden" id="qCard">
+    <div class="ident" id="qIdent"></div>
+    <div id="qList" class="q"></div>
+    <div class="skipnote">Don't know something? Leave it blank — Watto will work around it.</div>
+    <button class="btn" id="answerBtn">Continue</button>
+  </div>
+
+  <!-- result -->
+  <div class="card hidden" id="rCard">
+    <div class="ident" id="rIdent"></div>
+    <div class="range" id="rRange"></div>
+    <div class="likely">most likely <b id="rLikely"></b> &nbsp;<span class="pill" id="rConf"></span></div>
+    <div id="rSummary"></div>
+    <div class="sect flag hidden" id="rFlagsWrap"><h3>Red flags</h3><ul id="rFlags"></ul></div>
+    <div class="sect hidden" id="rNarrowWrap"><h3>Would narrow the range</h3><ul id="rNarrow"></ul></div>
+    <div class="sect hidden" id="rChannelsWrap"><h3>Where to sell</h3><ul id="rChannels"></ul></div>
+    <div class="sect comps hidden" id="rCompsWrap"><h3>Market comps</h3><ul id="rComps"></ul></div>
+    <details id="rWhy"><summary>Full reasoning</summary><p id="rReason"></p></details>
+    <button class="btn" id="againBtn">Appraise another item</button>
+  </div>
+</div>
+
+<dialog id="settings">
+  <h2>Settings</h2>
+  <div class="sub">Get a key at <b>openrouter.ai/keys</b> — it stays on this computer.</div>
+  <label>OpenRouter API key</label>
+  <input type="password" id="sKey" placeholder="sk-or-…" autocomplete="off">
+  <label>Triage model <span style="font-weight:400;color:var(--muted)">(fast &amp; cheap, needs vision)</span></label>
+  <input type="text" id="sTriage" list="models">
+  <label>Research model <span style="font-weight:400;color:var(--muted)">(web search added automatically)</span></label>
+  <input type="text" id="sResearch" list="models">
+  <label>Appraisal model <span style="font-weight:400;color:var(--muted)">(your smartest one)</span></label>
+  <input type="text" id="sAppraise" list="models">
+  <datalist id="models">
+    <option value="google/gemini-2.5-flash"></option>
+    <option value="google/gemini-2.5-pro"></option>
+    <option value="anthropic/claude-sonnet-4.5"></option>
+    <option value="anthropic/claude-haiku-4.5"></option>
+    <option value="openai/gpt-5"></option>
+    <option value="qwen/qwen2.5-vl-72b-instruct:free"></option>
+  </datalist>
+  <div class="row"><input type="checkbox" id="sWeb" checked><label for="sWeb" style="margin:0">Research live market prices (web search)</label></div>
+  <button class="btn gold" id="sSave">Save</button>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+let attachments = [];      // intake attachments
+let qAttachments = [];     // photos attached while answering
+let sessionId = null;
+let statusTimer = null;
+let hasKey = false;
+
+// ---------- files ----------
+function fileToAttachment(file) {
+  return new Promise(resolve => {
+    if (file.type === 'application/pdf' || !file.type.startsWith('image/')) {
+      const r = new FileReader();
+      r.onload = () => resolve({ name:file.name, mime:file.type||'application/pdf',
+        data_b64:r.result.split(',')[1], preview:null });
+      r.readAsDataURL(file);
+      return;
+    }
+    // downscale images to <=1600px JPEG to keep token cost sane
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width*scale); c.height = Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const url = c.toDataURL('image/jpeg', 0.85);
+      resolve({ name:file.name, mime:'image/jpeg', data_b64:url.split(',')[1], preview:url });
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+async function addFiles(files, list, thumbsEl) {
+  for (const f of files) list.push(await fileToAttachment(f));
+  renderThumbs(list, thumbsEl);
+}
+function renderThumbs(list, el) {
+  el.innerHTML = '';
+  list.forEach((a, i) => {
+    const d = document.createElement('div'); d.className = 'thumb';
+    d.innerHTML = a.preview ? `<img src="${a.preview}">` : `<div class="pdf">${a.name}</div>`;
+    const x = document.createElement('button'); x.textContent = '×';
+    x.onclick = () => { list.splice(i,1); renderThumbs(list, el); };
+    d.appendChild(x); el.appendChild(d);
+  });
+}
+$('drop').onclick = () => $('fileInput').click();
+$('fileInput').onchange = e => { addFiles([...e.target.files], attachments, $('thumbs')); e.target.value=''; };
+$('drop').ondragover = e => { e.preventDefault(); $('drop').classList.add('over'); };
+$('drop').ondragleave = () => $('drop').classList.remove('over');
+$('drop').ondrop = e => { e.preventDefault(); $('drop').classList.remove('over');
+  addFiles([...e.dataTransfer.files], attachments, $('thumbs')); };
+
+// ---------- flow ----------
+const STATUSES = ['Identifying the item…','Working out what actually matters for value…',
+  'Researching current market prices…','Calculating a defensible range…'];
+function showStatus() {
+  let i = 0;
+  $('statusText').textContent = STATUSES[0];
+  $('statusCard').classList.remove('hidden');
+  statusTimer = setInterval(() => { i=(i+1)%STATUSES.length; $('statusText').textContent=STATUSES[i]; }, 7000);
+}
+function hideStatus() { clearInterval(statusTimer); $('statusCard').classList.add('hidden'); }
+function showError(msg) { $('errBox').textContent = msg; $('errBox').classList.remove('hidden'); }
+function clearError() { $('errBox').classList.add('hidden'); }
+
+async function api(path, body) {
+  const resp = await fetch(path, { method:'POST',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  const data = await resp.json().catch(() => ({error:'Server returned an unreadable response.'}));
+  if (!resp.ok || data.error) throw new Error(data.error || ('HTTP ' + resp.status));
+  return data;
+}
+
+$('goBtn').onclick = async () => {
+  clearError();
+  if (!hasKey) { $('settings').showModal(); return; }
+  const desc = $('desc').value.trim();
+  if (!desc && !attachments.length) { showError('Add a photo or a description first.'); return; }
+  $('intakeCard').classList.add('hidden');
+  $('wrap').classList.add('compact');
+  showStatus();
+  try {
+    const clean = attachments.map(({name,mime,data_b64}) => ({name,mime,data_b64}));
+    handle(await api('/api/appraise', { description:desc, attachments:clean }));
+  } catch (e) { fail(e); }
+};
+
+function handle(data) {
+  hideStatus();
+  sessionId = data.session_id;
+  if (data.stage === 'questions') renderQuestions(data);
+  else renderResult(data);
+}
+function fail(e) {
+  hideStatus();
+  showError(e.message);
+  $('qCard').classList.add('hidden');
+  $('intakeCard').classList.remove('hidden');
+}
+
+function renderQuestions(data) {
+  qAttachments = [];
+  $('qIdent').textContent = data.identification ? `Looks like: ${data.identification}` : '';
+  const list = $('qList'); list.innerHTML = '';
+  data.questions.forEach(q => {
+    const div = document.createElement('div');
+    const label = document.createElement('label'); label.textContent = q.question; div.appendChild(label);
+    if (q.hint) { const h = document.createElement('div'); h.className='hint'; h.textContent=q.hint; div.appendChild(h); }
+    if (q.type === 'photo') {
+      const inp = document.createElement('input');
+      inp.type='file'; inp.accept='image/*'; inp.dataset.qid=q.id;
+      inp.onchange = async e => {
+        if (e.target.files[0]) {
+          const a = await fileToAttachment(e.target.files[0]);
+          a.qid = q.id; qAttachments = qAttachments.filter(x => x.qid !== q.id); qAttachments.push(a);
+        }
+      };
+      div.appendChild(inp);
+    } else {
+      const inp = document.createElement('input');
+      inp.type='text'; inp.dataset.qid=q.id; inp.placeholder='Leave blank to skip';
+      div.appendChild(inp);
+    }
+    list.appendChild(div);
+  });
+  $('qCard').classList.remove('hidden');
+}
+
+$('answerBtn').onclick = async () => {
+  clearError();
+  const answers = {};
+  $('qList').querySelectorAll('input[type=text]').forEach(i => answers[i.dataset.qid] = i.value.trim());
+  qAttachments.forEach(a => answers[a.qid] = '(photo attached: ' + a.name + ')');
+  $('qCard').classList.add('hidden');
+  showStatus();
+  try {
+    const clean = qAttachments.map(({name,mime,data_b64}) => ({name,mime,data_b64}));
+    handle(await api('/api/answer', { session_id:sessionId, answers, attachments:clean }));
+  } catch (e) { fail(e); }
+};
+
+function money(n, cur) {
+  try { return new Intl.NumberFormat('en-US',{style:'currency',currency:cur||'USD',maximumFractionDigits:0}).format(n); }
+  catch { return (cur||'$') + ' ' + n; }
+}
+function fillList(wrapId, listId, items, render) {
+  const ok = items && items.length;
+  $(wrapId).classList.toggle('hidden', !ok);
+  if (ok) $(listId).innerHTML = items.map(render).join('');
+}
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function renderResult(data) {
+  const r = data.result || {};
+  $('rIdent').textContent = data.identification || '';
+  $('rRange').textContent = money(r.low, r.currency) + ' – ' + money(r.high, r.currency);
+  $('rLikely').textContent = money(r.most_likely, r.currency);
+  const conf = (r.confidence||'low').toLowerCase();
+  $('rConf').textContent = conf + ' confidence'; $('rConf').className = 'pill ' + conf;
+  $('rSummary').textContent = r.summary || '';
+  fillList('rFlagsWrap','rFlags', r.red_flags, f => `<li>${esc(f)}</li>`);
+  fillList('rNarrowWrap','rNarrow', r.what_would_narrow_range, f => `<li>${esc(f)}</li>`);
+  fillList('rChannelsWrap','rChannels', r.resale_channels, f => `<li>${esc(f)}</li>`);
+  const comps = (data.research && data.research.comps) || [];
+  fillList('rCompsWrap','rComps', comps, c =>
+    `<li>${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a>` : esc(c.title)} — ${esc(c.price)} <span style="color:var(--muted)">(${esc(c.source)})</span></li>`);
+  $('rReason').textContent = r.reasoning || '';
+  $('rCard').classList.remove('hidden');
+}
+
+$('againBtn').onclick = () => {
+  attachments = []; qAttachments = []; sessionId = null;
+  renderThumbs(attachments, $('thumbs'));
+  $('desc').value = '';
+  $('rCard').classList.add('hidden');
+  $('intakeCard').classList.remove('hidden');
+  $('wrap').classList.remove('compact');
+  clearError();
+};
+
+// ---------- settings ----------
+async function loadSettings() {
+  const s = await (await fetch('/api/settings')).json();
+  hasKey = s.has_key;
+  $('keyBanner').classList.toggle('hidden', hasKey);
+  $('sKey').placeholder = hasKey ? `saved (${s.key_hint}) — paste to replace` : 'sk-or-…';
+  $('sTriage').value = s.triage_model; $('sResearch').value = s.research_model;
+  $('sAppraise').value = s.appraise_model; $('sWeb').checked = !!s.web_search;
+}
+$('gearBtn').onclick = () => $('settings').showModal();
+$('bannerOpen').onclick = () => $('settings').showModal();
+$('sSave').onclick = async () => {
+  await api('/api/settings', {
+    api_key: $('sKey').value.trim(),
+    triage_model: $('sTriage').value.trim(),
+    research_model: $('sResearch').value.trim(),
+    appraise_model: $('sAppraise').value.trim(),
+    web_search: $('sWeb').checked,
+  });
+  $('sKey').value = '';
+  $('settings').close();
+  await loadSettings();
+};
+loadSettings();
+</script>
+</body>
+</html>
