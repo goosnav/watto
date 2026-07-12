@@ -48,6 +48,8 @@ Guard rails encoded in `engine.py`:
 | Layer | Choice | Why |
 |---|---|---|
 | Engine | `engine.py`, pure Python stdlib | one file holds prompts + state machine; imported by every front end, including the future hosted API route (port to TS or run as-is on a Python host) |
+| Reports | `report.py`, hand-rolled minimal PDF writer | professional PDF (header band, value box, embedded photos, comps, reasoning, terms) with zero dependencies; every field optional so bad model output can't break it |
+| Persistence | `~/Watto Appraisals/<date>-<item>-<id>/` | photos + `appraisal.json` + `report.pdf` per finished appraisal; saving failures never kill an appraisal (`save_error` surfaces in UI) |
 | Model gateway | OpenRouter (OpenAI-compatible API) | one key/bill, every lab's models, `:free` variants for a free tier, `:online` suffix = built-in web search (no separate search API to integrate) |
 | Local server | stdlib `ThreadingHTTPServer`, `127.0.0.1` only | zero pip installs ⇒ the paid download can't break on customer machines |
 | UI | one `static/index.html`, vanilla JS | Google-simple was the requirement; no build step, works from a file server |
@@ -64,6 +66,17 @@ Guard rails encoded in `engine.py`:
 
 Cost shape: ~80% of tokens flow through cheap models; the expensive model
 runs exactly once per appraisal.
+
+## Startup robustness
+
+- Port 8177 busy? The server walks 8177–8196 and takes the first free port.
+- Already-running Watto detected via `/api/health` → second launch just opens
+  the browser to the existing instance (double-clicking twice is safe).
+- All startup failures print a human sentence (no tracebacks) and pause the
+  terminal window so double-click users can read it.
+- Launchers: `Watto.app` (macOS bundle w/ icon, background, Settings→Quit),
+  `Watto.bat` (Windows), `run.command`/`run.sh` (terminal). Each checks for
+  Python and shows a plain-language dialog/message if missing.
 
 ## Security posture (local app)
 

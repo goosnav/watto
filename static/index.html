@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Watto — know what it's worth</title>
 <style>
-  :root { --ink:#1c1917; --muted:#78716c; --line:#e7e5e4; --gold:#b45309; --gold-soft:#fef3c7; --bg:#fafaf9; --card:#ffffff; --red:#b91c1c; --green:#15803d; }
+  :root { --ink:#1c1917; --muted:#78716c; --line:#e7e5e4; --gold:#15803d; --gold-soft:#dcfce7; --bg:#fafaf9; --card:#ffffff; --red:#b91c1c; --green:#15803d; }
   * { box-sizing:border-box; margin:0; }
   body { font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); min-height:100vh; }
   .wrap { max-width:680px; margin:0 auto; padding:24px 16px 80px; }
@@ -27,11 +27,13 @@
   .thumb button { position:absolute; top:-7px; right:-7px; width:20px; height:20px; border-radius:50%; border:none; background:var(--ink); color:#fff; font-size:11px; line-height:1; cursor:pointer; }
   textarea { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font:inherit; resize:vertical; min-height:76px; margin-top:12px; }
   textarea:focus, input:focus { outline:2px solid var(--gold); border-color:transparent; }
-  .btn { display:block; width:100%; margin-top:14px; padding:14px; font:inherit; font-weight:700; color:#fff; background:var(--ink); border:none; border-radius:12px; cursor:pointer; }
+  .btn { display:block; width:100%; margin-top:14px; padding:14px; font:inherit; font-weight:700; color:#fff; background:var(--ink); border:none; border-radius:12px; cursor:pointer; text-align:center; text-decoration:none; }
+  .savednote { font-size:12px; color:var(--muted); margin-top:10px; text-align:center; word-break:break-all; }
+  .quitbtn { margin-top:14px; width:100%; background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; text-decoration:underline; }
   .btn:hover { background:#000; }
   .btn:disabled { opacity:.5; cursor:default; }
   .btn.gold { background:var(--gold); }
-  .banner { background:var(--gold-soft); border:1px solid #fcd34d; border-radius:12px; padding:12px 14px; font-size:14px; margin-bottom:16px; }
+  .banner { background:var(--gold-soft); border:1px solid #86efac; border-radius:12px; padding:12px 14px; font-size:14px; margin-bottom:16px; }
   .banner a { color:var(--gold); font-weight:600; cursor:pointer; }
   .status { display:flex; align-items:center; gap:12px; color:var(--muted); }
   .spin { width:20px; height:20px; border:3px solid var(--line); border-top-color:var(--gold); border-radius:50%; animation:sp 1s linear infinite; flex:none; }
@@ -46,7 +48,7 @@
   .likely b { color:var(--ink); }
   .pill { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.5px; }
   .pill.high { background:#dcfce7; color:var(--green); }
-  .pill.medium { background:var(--gold-soft); color:var(--gold); }
+  .pill.medium { background:#fef3c7; color:#b45309; }
   .pill.low { background:#fee2e2; color:var(--red); }
   .sect { margin-top:16px; }
   .sect h3 { font-size:13px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:6px; }
@@ -113,6 +115,8 @@
     <div class="sect hidden" id="rChannelsWrap"><h3>Where to sell</h3><ul id="rChannels"></ul></div>
     <div class="sect comps hidden" id="rCompsWrap"><h3>Market comps</h3><ul id="rComps"></ul></div>
     <details id="rWhy"><summary>Full reasoning</summary><p id="rReason"></p></details>
+    <a class="btn gold hidden" id="reportBtn" target="_blank" rel="noopener">View / print report (PDF)</a>
+    <div class="savednote" id="savedNote"></div>
     <button class="btn" id="againBtn">Appraise another item</button>
   </div>
 </div>
@@ -138,6 +142,7 @@
   </datalist>
   <div class="row"><input type="checkbox" id="sWeb" checked><label for="sWeb" style="margin:0">Research live market prices (web search)</label></div>
   <button class="btn gold" id="sSave">Save</button>
+  <button class="quitbtn" id="sQuit">Quit Watto</button>
 </dialog>
 
 <script>
@@ -224,7 +229,7 @@ $('goBtn').onclick = async () => {
   try {
     const clean = attachments.map(({name,mime,data_b64}) => ({name,mime,data_b64}));
     handle(await api('/api/appraise', { description:desc, attachments:clean }));
-  } catch (e) { fail(e); }
+  } catch (e) { fail(e, 'intakeCard'); }
 };
 
 function handle(data) {
@@ -233,11 +238,10 @@ function handle(data) {
   if (data.stage === 'questions') renderQuestions(data);
   else renderResult(data);
 }
-function fail(e) {
+function fail(e, restoreCard) {
   hideStatus();
   showError(e.message);
-  $('qCard').classList.add('hidden');
-  $('intakeCard').classList.remove('hidden');
+  $(restoreCard || 'intakeCard').classList.remove('hidden');
 }
 
 function renderQuestions(data) {
@@ -278,7 +282,7 @@ $('answerBtn').onclick = async () => {
   try {
     const clean = qAttachments.map(({name,mime,data_b64}) => ({name,mime,data_b64}));
     handle(await api('/api/answer', { session_id:sessionId, answers, attachments:clean }));
-  } catch (e) { fail(e); }
+  } catch (e) { fail(e, 'qCard'); }
 };
 
 function money(n, cur) {
@@ -307,6 +311,14 @@ function renderResult(data) {
   fillList('rCompsWrap','rComps', comps, c =>
     `<li>${c.url ? `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.title)}</a>` : esc(c.title)} — ${esc(c.price)} <span style="color:var(--muted)">(${esc(c.source)})</span></li>`);
   $('rReason').textContent = r.reasoning || '';
+  if (data.report_available) {
+    $('reportBtn').href = '/api/report/' + data.session_id;
+    $('reportBtn').classList.remove('hidden');
+  } else {
+    $('reportBtn').classList.add('hidden');
+  }
+  $('savedNote').textContent = data.saved_dir ? ('Saved to ' + data.saved_dir)
+    : (data.save_error || '');
   $('rCard').classList.remove('hidden');
 }
 
@@ -342,6 +354,11 @@ $('sSave').onclick = async () => {
   $('sKey').value = '';
   $('settings').close();
   await loadSettings();
+};
+$('sQuit').onclick = async () => {
+  try { await api('/api/quit', {}); } catch (e) { /* server dies mid-reply; that's success */ }
+  document.body.innerHTML = '<div style="font:16px system-ui;text-align:center;margin-top:20vh;color:#78716c">' +
+    'Watto has quit. You can close this tab.</div>';
 };
 loadSettings();
 </script>

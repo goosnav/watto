@@ -13,11 +13,16 @@ major AI model (Claude, Gemini, GPT, free models). One key, one bill.
    default models.
 
 ### Launch Watto
-- **macOS:** double-click `run.command`. First time, macOS may warn about an
-  unidentified developer — right-click the file → **Open** → **Open**.
+- **macOS:** double-click **`Watto.app`**. First time, macOS warns about an
+  unidentified developer — right-click it → **Open** → **Open** (once). It
+  runs quietly in the background; quit from Settings → Quit Watto.
 - **Windows:** install Python from python.org (check "Add to PATH"), then
-  right-click `run.ps1` → **Run with PowerShell**.
+  double-click **`Watto.bat`**.
 - **Linux:** `./run.sh`
+
+Keep the launcher inside the Watto folder — it runs the code sitting next to
+it. Launching twice is safe: Watto notices it's already running and just
+reopens your browser, and it finds a free port by itself if 8177 is taken.
 
 Your browser opens to Watto. Click the **gear icon** (top right), paste your
 key, **Save**. Done forever — the key lives only in `~/.watto/settings.json`
@@ -51,6 +56,11 @@ seconds you get:
 - **What would narrow the range** — e.g. *"an acid test would confirm purity
   and tighten the range to ±10%"*
 - **Where to sell** — melt buyer vs eBay vs specialist auction
+- **A printable PDF report** — click *View / print report*. Every appraisal
+  also lands in `~/Watto Appraisals/<date>-<item>/` with the photos,
+  `appraisal.json` (the full record), and `report.pdf` — an official-looking
+  document with the value range, market comps, red flags, and full reasoning,
+  ready to hand to a customer or keep on file.
 
 ## 3. What else can it eat?
 

@@ -89,6 +89,8 @@ def main():
             print(f"\n  {label}:")
             for item in r[key]:
                 print(f"   - {item}")
+    if session.get("saved_dir"):
+        print(f"\n  Saved (photos, record, PDF report): {session['saved_dir']}")
     print()
 
 

@@ -16,11 +16,21 @@ don't own a scale — skipped questions just widen the range.
 
 1. **Get a key:** create one at [openrouter.ai/keys](https://openrouter.ai/keys)
    (one key = every major AI model; add $5 credit to start).
-2. **Launch:** double-click `run.command` (macOS) — or `run.sh` (Linux) /
-   `run.ps1` (Windows). Your browser opens automatically.
+2. **Launch:** double-click **`Watto.app`** (macOS — first time: right-click →
+   Open). On Windows double-click **`Watto.bat`**; on Linux run **`./run.sh`**.
+   Your browser opens automatically. Keep the launcher inside this folder.
 3. **Paste the key** in Settings (gear icon, top right). It is stored only on
    this computer (`~/.watto/settings.json`, owner-readable only).
 4. Drop in a photo, type a sentence, hit **Appraise it**.
+
+Every finished appraisal is saved to **`~/Watto Appraisals/`** — one folder
+per item with the photos, the full data record (`appraisal.json`), and a
+professional **PDF report** (`report.pdf`) you can print or email. The same
+report is available from the *View / print report* button on the result page.
+
+If Watto is already running, launching it again just reopens your browser —
+and if another program is using its port, it automatically finds a free one.
+To stop Watto: **Settings → Quit Watto** (or Ctrl+C if you used `run.command`).
 
 Requires only Python 3.9+ (preinstalled on macOS; [python.org](https://python.org)
 on Windows). **Zero dependencies to install.**
@@ -29,9 +39,12 @@ on Windows). **Zero dependencies to install.**
 
 | File | What it is |
 |---|---|
-| `run.command` / `run.sh` / `run.ps1` | double-click launchers |
+| `Watto.app` | macOS launcher (double-click; runs in the background, quit from Settings) |
+| `Watto.bat` | Windows launcher (double-click) |
+| `run.command` / `run.sh` / `run.ps1` | terminal launchers (show the log; Ctrl+C to quit) |
 | `server.py` | local web server (binds 127.0.0.1 only — never exposed to the network) |
 | `engine.py` | the appraisal state machine (shared by web, CLI, and the future hosted version) |
+| `report.py` | PDF report generator (zero dependencies) |
 | `cli.py` | command-line interface for developers/automation |
 | `static/index.html` | the entire UI |
 | `test_watto.py` | offline self-test: `python3 test_watto.py` |
@@ -62,13 +75,14 @@ full structured result for pipelines.
 ## Troubleshooting
 
 - **"No OpenRouter API key set"** — gear icon → paste key → Save.
-- **Browser didn't open** — go to `http://127.0.0.1:8177` manually.
-- **macOS blocks run.command** — right-click → Open (first launch only), or
-  `chmod +x run.command` in Terminal.
+- **Browser didn't open** — go to `http://127.0.0.1:8177` manually (Watto
+  tries ports 8177–8196 in order if some are busy).
+- **macOS blocks Watto.app / run.command** — right-click → Open (first
+  launch only). Unsigned apps require this once.
 - **"OpenRouter error 402"** — your OpenRouter account is out of credit.
 - **A model errors or returns garbage** — switch that role to another slug in
   Settings; free models are the usual culprits.
-- **Port already in use** — `python3 server.py --port 8200 --open`.
+- **Need to stop it?** Settings → Quit Watto.
 
 ## Verify the install
 

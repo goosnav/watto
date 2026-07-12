@@ -10,14 +10,19 @@ reply must be strict JSON (one retry, then a clean error).
 
 Shared by server.py (web), cli.py (automation), and later the hosted API.
 """
+import base64
 import json
 import re
+import time
 import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
 
+import report
+
 SETTINGS_PATH = Path.home() / ".watto" / "settings.json"
+APPRAISALS_DIR = Path.home() / "Watto Appraisals"
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 DEFAULTS = {
@@ -261,6 +266,11 @@ class Appraiser:
                 session["research"] = {"error": str(e), "comps": [], "market_notes": ""}
         session["result"] = self._appraise(session)
         session["stage"] = "done"
+        try:
+            save_appraisal(session)
+        except Exception as e:
+            # saving is a convenience; never let it kill a finished appraisal
+            session["save_error"] = f"Could not save the appraisal folder: {e}"
         return session
 
     def _triage(self, session):
@@ -300,6 +310,30 @@ class Appraiser:
         return result
 
 
+def save_appraisal(session):
+    """One folder per appraised item: photos, full record JSON, PDF report."""
+    triage = session["triage"] or {}
+    slug = re.sub(r"[^a-z0-9]+", "-",
+                  (triage.get("identification") or session["description"] or "item")
+                  .lower()).strip("-")[:40] or "item"
+    folder = APPRAISALS_DIR / f"{time.strftime('%Y-%m-%d_%H%M')}-{slug}-{session['id'][:6]}"
+    folder.mkdir(parents=True, exist_ok=True)
+    for i, a in enumerate(session["attachments"], 1):
+        ext = ".pdf" if a.get("mime") == "application/pdf" else ".jpg"
+        try:
+            (folder / f"photo-{i}{ext}").write_bytes(base64.b64decode(a.get("data_b64", "")))
+        except Exception:
+            pass  # one corrupt upload shouldn't lose the rest
+    record = {k: session[k] for k in
+              ("id", "description", "facts", "triage", "research", "result")}
+    record["saved_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    (folder / "appraisal.json").write_text(json.dumps(record, indent=2))
+    (folder / "report.pdf").write_bytes(report.build_pdf(session))
+    session["saved_dir"] = str(folder)
+    session["report_pdf"] = str(folder / "report.pdf")
+    return folder
+
+
 def public_view(session):
     """What the web/CLI clients see (no raw attachments echoed back)."""
     triage = session["triage"] or {}
@@ -311,4 +345,7 @@ def public_view(session):
         "questions": session["pending"],
         "research": session["research"],
         "result": session["result"],
+        "saved_dir": session.get("saved_dir"),
+        "report_available": bool(session.get("report_pdf")),
+        "save_error": session.get("save_error"),
     }

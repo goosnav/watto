@@ -1,0 +1,13 @@
+#!/bin/bash
+# Watto launcher — lives inside the Watto folder next to server.py.
+REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
+if ! command -v python3 >/dev/null 2>&1; then
+  osascript -e 'display alert "Watto needs Python 3" message "Install Python from python.org, then open Watto again."'
+  exit 1
+fi
+if [ ! -f "$REPO/server.py" ]; then
+  osascript -e 'display alert "Watto files not found" message "Keep Watto.app inside its original folder (next to server.py)."'
+  exit 1
+fi
+cd "$REPO"
+nohup python3 server.py --open >/dev/null 2>&1 &

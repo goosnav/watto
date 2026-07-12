@@ -8,9 +8,16 @@ zero dependencies, bring-your-own-key, nothing for you to host or support at
 
 ```bash
 # from the repo root — ship exactly what's tested
-zip -r Watto-v1.0.zip README.md TUTORIAL.md run.command run.sh run.ps1 \
-    server.py engine.py cli.py static/ test_watto.py
+zip -r Watto-v1.1.zip README.md TUTORIAL.md Watto.app Watto.bat \
+    run.command run.sh run.ps1 server.py engine.py report.py cli.py \
+    static/ test_watto.py
 ```
+
+Note: `Watto.app` is unsigned, so macOS buyers right-click → Open on first
+launch (documented in README/TUTORIAL). When revenue justifies it, an Apple
+Developer ID ($99/yr) + `codesign`/`notarytool` removes that friction — and a
+PyInstaller build per OS would remove the Python requirement entirely. Ship
+without both first; they're polish, not blockers.
 
 Rules: version the filename; `TUTORIAL.md` is the onboarding (customers get
 their own OpenRouter key — make that crystal clear on the product page so

@@ -2,8 +2,13 @@
 """Offline smoke test — full state machine against a scripted fake LLM.
 No network, no API key needed.  Run: python3 test_watto.py"""
 import json
+import tempfile
+from pathlib import Path
 
 import engine
+import report
+
+engine.APPRAISALS_DIR = Path(tempfile.mkdtemp())  # don't pollute the real folder
 
 TRIAGE_WITH_QS = json.dumps({
     "identification": "Gold ring with red stone, possibly Soviet 583 gold",
@@ -67,6 +72,15 @@ def test_full_flow():
     assert view["stage"] == "done" and view["result"]["low"] == 280
     assert "attachments" not in view
 
+    # every finished appraisal saves a folder: uploads + record + PDF report
+    assert view["report_available"] and view["saved_dir"]
+    folder = Path(s["saved_dir"])
+    assert (folder / "photo-1.jpg").exists()
+    record = json.loads((folder / "appraisal.json").read_text())
+    assert record["result"]["most_likely"] == 340
+    pdf = (folder / "report.pdf").read_bytes()
+    assert pdf.startswith(b"%PDF") and pdf.endswith(b"%%EOF\n") and len(pdf) > 2000
+
 
 def test_no_questions_short_circuit():
     settings = dict(engine.DEFAULTS, api_key="test", web_search=False)
@@ -97,6 +111,23 @@ def test_extract_json():
     assert ej('Sure! ```json\n{"a": 1}\n``` hope that helps') == {"a": 1}
     assert ej('preamble {"a": {"b": 2}} trailing') == {"a": {"b": 2}}
     assert ej('no json here') is None
+
+
+def test_report_survives_garbage_input():
+    # empty session, junk attachment, malformed result values — must still render
+    session = {
+        "id": "x", "description": "", "facts": {"weight": "12"},
+        "attachments": [{"name": "junk.jpg", "mime": "image/jpeg", "data_b64": "aGk="},
+                        {"name": "doc.pdf", "mime": "application/pdf", "data_b64": "aGk="}],
+        "triage": {"confidence": "not-a-number"},
+        "research": {"comps": ["not-a-dict", {"title": "ok", "price": "$5"}]},
+        "result": {"low": "abc", "red_flags": ["(parens) and \\slashes\\ and émojis 🎉"],
+                   "reasoning": "long text " * 300},  # forces multi-page
+    }
+    pdf = report.build_pdf(session)
+    assert pdf.startswith(b"%PDF")
+    assert (b"/Count 2" in pdf) or (b"/Count 3" in pdf)  # reasoning spilled pages
+    assert report.jpeg_info(b"hi") is None  # junk bytes skipped, not embedded
 
 
 def test_json_retry():
